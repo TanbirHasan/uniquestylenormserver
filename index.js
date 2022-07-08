@@ -33,6 +33,10 @@ async function run(){
 
       const productcollection = client.db("unique").collection("products");
       const ordercollection = client.db("unique").collection("ordercollection");
+      const paymentscollection = client.db("unique").collection("paymentsdata");
+       const userCollectionFull = client
+         .db("unique")
+         .collection("updateduserdata");
 
       console.log("database connected successfully");
 
@@ -82,7 +86,7 @@ async function run(){
       app.post("/create-payment-intent", async (req, res) => {
         const service = req.body;
         const price = service.price;
-        console.log(price)
+        console.log(price);
         const amount = price * 100;
         const paymentIntent = await stripe.paymentIntents.create({
           amount: amount,
@@ -90,6 +94,49 @@ async function run(){
           payment_method_types: ["card"],
         });
         res.send({ clientSecret: paymentIntent.client_secret });
+      });
+
+      // updating the payment to know wheather the order is paid or not
+
+      app.patch("/order/:id", async (req, res) => {
+        const id = req.params.id;
+        const payment = req.body;
+        const filter = { _id: ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            paid: true,
+            transactionId: payment.transactionId,
+          },
+        };
+        const result = await paymentscollection.insertOne(payment);
+        const updateorder = await ordercollection.updateOne(filter, updatedDoc);
+
+        res.send({ updateorder });
+      });
+
+      // storing users with full information
+
+      app.post("/usersinfo/:email", async (req, res) => {
+        const email = req.params.email;
+        const userInfo = req.body;
+        const filter = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            name: userInfo.name,
+            email: userInfo.email,
+            location: userInfo.location,
+            phone: userInfo.phone,
+            linkedin: userInfo.linkedin,
+          },
+        };
+        const result = await userCollectionFull.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+
+        res.send(result);
       });
     }
     catch(err){
