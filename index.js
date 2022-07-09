@@ -8,7 +8,7 @@ const stripe = require("stripe")(
   "  sk_test_51L3crVI20gp0i97mRSUa6lJ5ZbgZAnYdK9cAoJ13JyFAXlVKpyKTm2F2Lb58MrCmc9GhUEWnW7nPprb3C2VelXbO00iJZ5Iefm"
 );
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const port = process.env.PORT || 9500;
+const port = process.env.PORT || 7000;
 
 const app = express();
 
@@ -34,14 +34,21 @@ async function run(){
       const productcollection = client.db("unique").collection("products");
       const ordercollection = client.db("unique").collection("ordercollection");
       const paymentscollection = client.db("unique").collection("paymentsdata");
+       const topdealscollection = client
+         .db("unique")
+         .collection("topdealsproducts");
        const userCollectionFull = client
          .db("unique")
          .collection("updateduserdata");
 
       console.log("database connected successfully");
 
+
+      // getting products based on specific category
+
       app.get("/products", async (req, res) => {
         const categories = req.query.categories;
+        console.log(categories);
 
         const query = { categories };
 
@@ -49,6 +56,16 @@ async function run(){
         const products = await cursor.toArray();
         res.send(products);
       });
+
+      // getting product
+
+      app.get("/allproducts", async (req,res) => {
+        const query = {};
+        const cursor = productcollection.find(query);
+        const products = await cursor.toArray();
+        res.send(products);
+
+      })
 
       app.get("/products/find/:id", async (req, res) => {
         const id = req.params.id;
@@ -127,7 +144,7 @@ async function run(){
             email: userInfo.email,
             location: userInfo.location,
             phone: userInfo.phone,
-            linkedin: userInfo.linkedin,
+            facebook: userInfo.facebook,
           },
         };
         const result = await userCollectionFull.updateOne(
@@ -138,6 +155,30 @@ async function run(){
 
         res.send(result);
       });
+
+
+      // getting individual user info
+
+        app.get("/userInfo", async (req, res) => {
+        const email = req.query.email;
+      
+      
+
+        const query = { email: email };
+        const cursor = userCollectionFull.find(query);
+        const user = await cursor.toArray();
+        return res.send(user);
+
+        })
+
+
+        // getting deals of the day products
+         app.get("/dealsproducts", async (req, res) => {
+           const query = {};
+           const cursor = topdealscollection.find(query);
+           const products = await cursor.toArray();
+           res.send(products);
+         });
     }
     catch(err){
 
