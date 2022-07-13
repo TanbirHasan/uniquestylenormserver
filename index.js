@@ -75,6 +75,15 @@ async function run(){
         res.send(order);
       });
 
+
+      // getting deals of the day product details
+            app.get("/dealsoftheday/find/:id", async (req, res) => {
+              const id = req.params.id;
+
+              const query = { _id: ObjectId(id) };
+              const order = await topdealscollection.findOne(query);
+              res.send(order);
+            });
       // posting a order order
       app.post("/order", async (req, res) => {
         const newService = req.body;
